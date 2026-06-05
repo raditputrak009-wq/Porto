@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEO-BITES | Ultimate Pop Art Food</title>
+    <style>
+        /* --- RESET & VARS --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial Black', 'Impact', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        :root {
+            --bg-dark: #0B001A;
+            --pop-purple: #6A0DAD;
+            --pop-neon: #39FF14;
+            --pop-accent: #E0115F;
+            --text-light: #FFFFFF;
+            --stroke: 3px solid #000000;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
+        }
+
+        #canvas3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- KEYFRAMES ANIMASI CSS --- */
+        @keyframes slideDown {
+            from { transform: translateY(-100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+        }
+
+        @keyframes pulseNeon {
+            0%, 100% { box-shadow: 5px 5px 0px var(--pop-accent); transform: scale(1); }
+            50% { box-shadow: 10px 10px 0px var(--pop-neon); transform: scale(1.05); }
+        }
+
+        /* --- NAVBAR FIX (RESPONSIF & ANIMASI) --- */
+        nav {
+            position: fixed;
+            top: 15px;
+            left: 5%;
+            width: 90%;
+            max-width: 1200px;
+            background: rgba(11, 0, 26, 0.95);
+            border: var(--stroke);
+            box-shadow: 6px 6px 0px var(--pop-neon);
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 25px;
+            z-index: 9999;
+            backdrop-filter: blur(8px);
+            animation: slideDown 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            color: var(--pop-neon);
+            text-shadow: 2px 2px 0px #000;
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-light);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            border-radius: 6px;
+            transition: 0.2s ease;
+            border: 2px solid transparent;
+            white-space: nowrap;
+        }
+
+        .nav-links a:hover {
+            background: var(--pop-purple);
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0px var(--pop-neon);
+            transform: translate(-2px, -2px);
+        }
+
+        /* Tombol Hamburger */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 28px;
+            height: 4px;
+            background: var(--pop-neon);
+            border: 1px solid #000;
+            transition: 0.3s;
+        }
+
+        /* RESPONSIVE BREAKPOINT FOR NAVBAR */
+        @media (max-width: 992px) {
+            .menu-toggle {
+                display: flex;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 70%;
+                max-width: 300px;
+                height: 100vh;
+                background: rgba(11, 0, 26, 0.98);
+                border-left: var(--stroke);
+                flex-direction: column;
+                justify-content: center;
+                gap: 20px;
+                transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                box-shadow: -10px 0 0 rgba(0,0,0,0.5);
+            }
+
+            .nav-links.active {
+                right: 0;
+            }
+
+            .nav-links a {
+                font-size: 1.1rem;
+                display: block;
+                width: 80%;
+                text-align: center;
+            }
+            
+            .menu-toggle.active span:nth-child(1) { transform: rotate(45deg) translate(6px, 6px); }
+            .menu-toggle.active span:nth-child(2) { opacity: 0; }
+            .menu-toggle.active span:nth-child(3) { transform: rotate(-45deg) translate(6px, -7px); }
+        }
+
+        /* --- LAYOUT SECTIONS --- */
+        section {
+            min-height: 100vh;
+            width: 100%;
+            padding: 100px 8% 60px 8%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-bottom: var(--stroke);
+            text-align: center;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: scale(0.9) translateY(30px);
+            transition: all 0.6s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        /* --- GLOBAL COMPONENTS --- */
+        .section-title {
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            text-shadow: 4px 4px 0px var(--pop-purple);
+            color: #fff;
+        }
+
+        .hero-title-anim {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .pop-box {
+            background: var(--pop-purple);
+            border: var(--stroke);
+            padding: 30px;
+            box-shadow: 8px 8px 0px #000;
+            max-width: 700px;
+            width: 100%;
+            transition: transform 0.3s;
+        }
+        
+        .pop-box:hover {
+            transform: rotate(-2deg) scale(1.02);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .card {
+            background: #120024;
+            border: 3px solid var(--pop-purple);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 5px 5px 0px #000;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) rotate(2deg) scale(1.05);
+            border-color: var(--pop-neon);
+            box-shadow: 10px 10px 0px var(--pop-neon);
+            z-index: 2;
+        }
+
+        .cta-btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: var(--pop-neon);
+            color: #000;
+            border: var(--stroke);
+            border-radius: 8px;
+            cursor: pointer;
+            animation: pulseNeon 2s infinite;
+            transition: background 0.3s;
+        }
+
+        .cta-btn:hover {
+            background: #fff;
+        }
+
+        /* --- SECTIONS INDIVIDUAL BACKGROUNDS --- */
+        #home { background: radial-gradient(circle, #3a0066 0%, var(--bg-dark) 80%); }
+        #story { background: #15002a; }
+        #menu { background: #1a0033; }
+        #chef { background: #110022; }
+        #promo { background: #220044; }
+        #testi { background: #180030; }
+        #order { background: #26004d; }
+        #contact { background: #000000; min-height: 60vh; }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas3d"></canvas>
+
+    <nav>
+        <div class="logo">⚡ NEO-BITES</div>
+        <div class="menu-toggle" id="mobileMenu" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#home" onclick="toggleMenu()">Home</a></li>
+            <li><a href="#story" onclick="toggleMenu()">Story</a></li>
+            <li><a href="#menu" onclick="toggleMenu()">Menu</a></li>
+            <li><a href="#chef" onclick="toggleMenu()">Chef</a></li>
+            <li><a href="#promo" onclick="toggleMenu()">Promo</a></li>
+            <li><a href="#testi" onclick="toggleMenu()">Review</a></li>
+            <li><a href="#order" onclick="toggleMenu()">Order</a></li>
+            <li><a href="#contact" onclick="toggleMenu()">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section id="home">
+        <h1 class="section-title hero-title-anim" style="font-size: clamp(2.5rem, 8vw, 5rem); line-height: 1;">KULINER <br><span style="color: var(--pop-neon);">REVOLUSIONER</span></h1>
+        <p class="hero-title-anim" style="margin: 20px 0; max-width: 500px; animation-delay: 0.2s;">Gabungan rasa ekstrem bumbu rahasia masa kini dalam balutan seni gelap Pop Art futuristik.</p>
+        <button class="cta-btn" onclick="location.href='#menu'">SANTAP SEKARANG</button>
+    </section>
+
+    <section id="story">
+        <div class="pop-box reveal">
+            <h2 class="section-title" style="font-size: 2rem; margin-bottom: 15px; color: var(--pop-neon);">RADICAL STORY</h2>
+            <p style="font-family: sans-serif; line-height: 1.6;">Kami merobek semua aturan kaku dunia kuliner. NEO-BITES didirikan oleh sekumpulan kreator rasa pemberontak jalanan yang bosan dengan makanan instan biasa tanpa jiwa seni.</p>
+        </div>
+    </section>
+
+    <section id="menu">
+        <h2 class="section-title">MENU ANDALAN</h2>
+        <div class="grid-container reveal">
+            <div class="card">
+                <span style="font-size: 3rem; display: inline-block; margin-bottom: 10px;">🍔</span>
+                <h3>CYBER BURGER</h3>
+                <p style="color: var(--pop-neon); margin: 10px 0; font-weight: bold;">Rp 45.000</p>
+                <p style="font-size: 0.9rem; font-family: sans-serif;">Daging premium juicy berselimut keju ungu kental.</p>
+            </div>
+            <div class="card">
+                <span style="font-size: 3rem; display: inline-block; margin-bottom: 10px;">🍕</span>
+                <h3>NEON PIZZA</h3>
+                <p style="color: var(--pop-neon); margin: 10px 0; font-weight: bold;">Rp 89.000</p>
+                <p style="font-size: 0.9rem; font-family: sans-serif;">Rotinya renyah, saus tomat asam manis menyala.</p>
+            </div>
+            <div class="card">
+                <span style="font-size: 3rem; display: inline-block; margin-bottom: 10px;">🧋</span>
+                <h3>TOXIC BOBA</h3>
+                <p style="color: var(--pop-neon); margin: 10px 0; font-weight: bold;">Rp 28.000</p>
+                <p style="font-size: 0.9rem; font-family: sans-serif;">Ledakan gula aren pekat di ujung lidah Anda.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="chef">
+        <h2 class="section-title" style="color: var(--pop-neon);">THE MAD CHEF</h2>
+        <div class="pop-box reveal" style="background: transparent; border-color: var(--pop-accent);">
+            <span style="font-size: 5rem;">👨‍🍳</span>
+            <h3 style="font-size: 1.8rem; margin: 15px 0;">Chef Master 'X'</h3>
+            <p style="font-family: sans-serif; font-style: italic;">"Seni memasak sejati adalah saat Anda berani mencampurkan kegelapan malam dengan kesegaran bumbu alami."</p>
+        </div>
+    </section>
+
+    <section id="promo">
+        <div class="pop-box reveal" style="background: var(--pop-accent); transform: skewY(-2deg);">
+            <h2 style="font-size: 2rem; color: #000;">KILAT PROMO MALAM</h2>
+            <p style="font-size: 1.5rem; margin: 15px 0; color: #fff; text-shadow: 2px 2px 0 #000;">POTONGAN 50% KHUSUS HARI INI!</p>
+            <p style="font-family: sans-serif; font-weight: bold; color: #000;">Gunakan kode voucher: <span style="background:#000; color:#fff; padding:5px 10px; display:inline-block; transform:rotate(2deg);">NEOPOP50</span></p>
+        </div>
+    </section>
+
+    <section id="testi">
+        <h2 class="section-title">SUARA KONSUMEN</h2>
+        <div class="grid-container reveal">
+            <div class="card" style="border-color: var(--pop-accent);">
+                <p style="font-family: sans-serif; font-size: 1.1rem; margin-bottom: 10px;">"Pertama kali liat websitenya langsung kagum. Pas pesen makanannya gila parah enaknya!"</p>
+                <span style="color: var(--pop-neon); font-weight: bold;">- @andri_foodies</span>
+            </div>
+            <div class="card" style="border-color: var(--pop-accent);">
+                <p style="font-family: sans-serif; font-size: 1.1rem; margin-bottom: 10px;">"Konsep warnanya berani banget, burgernya beneran bikin kenyang dan nagih."</p>
+                <span style="color: var(--pop-neon); font-weight: bold;">- @sisca_melia</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="order">
+        <h2 class="section-title" style="color: var(--pop-neon);">AMBIL AMUNISIMU</h2>
+        <div class="pop-box reveal" style="background:#000;">
+            <p style="font-family:sans-serif; margin-bottom: 20px;">Layanan pengiriman instant 24 jam non-stop langsung ke rumah atau markas rahasiamu.</p>
+            <button class="cta-btn" onclick="alert('Pesanan diproses ke sistem kurir robotik!')">ORDER SEKARANG</button>
+        </div>
+    </section>
+
+    <section id="contact">
+        <h2 class="logo" style="font-size: 2.5rem; margin-bottom: 15px; display:inline-block; animation: float 3s ease-in-out infinite;">⚡ NEO-BITES</h2>
+        <p style="max-width: 400px; font-family: sans-serif; font-size: 0.9rem; color: #888;">Kompleks Distrik Cyber No. 8, Sektor Gelap Pop Art. Hubungi kami: support@neobites.food</p>
+        <p style="margin-top: 40px; font-size: 0.7rem; color: #444;">&copy; 2026 NEO-BITES. No Bugs, Pure Performance.</p>
+    </section>
+
+    <script>
+        // Logika Responsif Buka Tutup Navigasi (Hamburger Menu)
+        function toggleMenu() {
+            const navLinks = document.getElementById("navLinks");
+            const mobileMenu = document.getElementById("mobileMenu");
+            
+            if (window.innerWidth <= 992) {
+                navLinks.classList.toggle("active");
+                mobileMenu.classList.toggle("active");
+            }
+        }
+
+        // --- ANIMASI CANVAS 3D PSEUDO POP ART MATRIX ---
+        const canvas = document.getElementById('canvas3d');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        class PopShape3D {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 25 + 12;
+                this.speedX = Math.random() * 0.8 - 0.4;
+                this.speedY = Math.random() * 0.8 - 0.4;
+                this.angle = Math.random() * Math.PI;
+                this.spin = Math.random() * 0.02 - 0.01;
+                this.color = Math.random() > 0.5 ? '#6A0DAD' : '#39FF14';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.angle += this.spin;
+                if (this.x < 0 || this.x > width) this.speedX *= -1;
+                if (this.y < 0 || this.y > height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                // Bayangan Hitam Tebal Pop Art
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(-this.size/2 + 4, -this.size/2 + 4, this.size, this.size);
+                // Objek Depan
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                ctx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        const shapes = Array.from({ length: 25 }, () => new PopShape3D());
+
+        function loop() {
+            ctx.clearRect(0, 0, width, height);
+            shapes.forEach(shape => {
+                shape.update();
+                shape.draw();
+            });
+            requestAnimationFrame(loop);
+        }
+        loop();
+
+        // --- ANIMASI REVEAL ON SCROLL ---
+        const reveals = document.querySelectorAll('.reveal');
+        function checkScroll() {
+            reveals.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                if (elementTop < window.innerHeight - 100) {
+                    element.classList.add('active');
+                }
+            });
+        }
+        window.addEventListener('scroll', checkScroll);
+        checkScroll(); // Jalankan sekali di awal load
+    </script>
+</body>
+</html>
